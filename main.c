@@ -37,7 +37,7 @@ static uchar rt_usbHidReportDescriptorSize=0;
 static uchar *rt_usbDeviceDescriptor=NULL;
 static uchar rt_usbDeviceDescriptorSize=0;
 
-PROGMEM int usbDescriptorStringSerialNumber[]  = {
+PROGMEM const int usbDescriptorStringSerialNumber[]  = {
  	USB_STRING_DESCRIPTOR_HEADER(4),
 	'1','0','0','0'
 };
@@ -191,12 +191,9 @@ int main(void)
 {
 	char must_report = 0, first_run = 1;
 	uchar   idleCounter = 0;
-	int run_mode;
 
-	run_mode = (PINB & 0x06)>>1;
 
 	curGamepad = jaguarGetGamepad();
-	
 
 	// configure report descriptor according to
 	// the current gamepad
@@ -227,7 +224,6 @@ int main(void)
 	sei();
 	DBG1(0x00, 0, 0);
 
-	
 	for(;;){	/* main event loop */
 		wdt_reset();
 
