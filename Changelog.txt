@@ -1,7 +1,8 @@
 --- v1.1 (Feb 28, 2015)
     - Updated code for modern compilers
     - Updated V-USB
-	- Init code reworked.
+	- Init code reworked
+	- Use new USB VID/PID
 
 --- v1.0 (Jan 23, 2009)
 	- Initial release under GPLv2. 
