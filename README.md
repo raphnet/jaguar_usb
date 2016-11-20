@@ -14,6 +14,7 @@ French: [Adaptateur Atari Jaguar à USB](http://www.raphnet.net/electronique/jag
 Currently supported micro-controller(s):
 
 * Atmega8
+* Atmega168
 
 Adding support for other micro-controllers should be easy, as long as the target has enough
 IO pins, enough memory (flash and SRAM) and is supported by V-USB.
