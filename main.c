@@ -1,5 +1,5 @@
 /* Jaguar controller to USB adapter
- * Copyright (C) 2009-2015 Raphaël Assénat
+ * Copyright (C) 2009-2016 Raphaël Assénat
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,14 @@
 #include "jaguar.h"
 
 #include "devdesc.h"
+
+#if defined(__AVR_ATmega168__) || defined(__AVR_ATmega168A__) || \
+	defined(__AVR_ATmega168P__) || defined(__AVR_ATmega328__) || \
+	defined(__AVR_ATmega328P__) || defined(__AVR_ATmega88__) || \
+	defined(__AVR_ATmega88A__) || defined(__AVR_ATmega88P__) || \
+	defined(__AVR_ATmega88PA__)
+#define AT168_COMPATIBLE
+#endif
 
 static uchar *rt_usbHidReportDescriptor=NULL;
 static uchar rt_usbHidReportDescriptorSize=0;
@@ -155,7 +163,13 @@ static void usbReset(void)
 	DDRD &= ~(0x01 | 0x04);
 }
 
-
+#if defined(AT168_COMPATIBLE)
+#define mustPollControllers()   (TIFR2 & (1<<OCF2A))
+#define clrPollControllers()    do { TIFR2 = 1<<OCF2A; } while(0)
+#else
+#define mustPollControllers()   (TIFR & (1<<OCF2))
+#define clrPollControllers()    do { TIFR = 1<<OCF2; } while(0)
+#endif
 
 
 static uchar    reportBuffer[6];    /* buffer for HID reports */
@@ -165,8 +179,6 @@ static uchar    reportBuffer[6];    /* buffer for HID reports */
 /* ------------------------------------------------------------------------- */
 /* ----------------------------- USB interface ----------------------------- */
 /* ------------------------------------------------------------------------- */
-
-static uchar    idleRate;           /* in 4 ms units */
 
 uchar	usbFunctionDescriptor(struct usbRequest *rq)
 {
@@ -203,11 +215,6 @@ uchar	usbFunctionSetup(uchar data[8])
 			/* we only have one report type, so don't look at wValue */
 			curGamepad->buildReport(reportBuffer);
 			return curGamepad->report_size;
-		}else if(rq->bRequest == USBRQ_HID_GET_IDLE){
-			usbMsgPtr = &idleRate;
-			return 1;
-		}else if(rq->bRequest == USBRQ_HID_SET_IDLE){
-			idleRate = rq->wValue.bytes[1];
 		}
 	}else{
 	/* no vendor specific requests implemented */
@@ -221,7 +228,6 @@ uchar	usbFunctionSetup(uchar data[8])
 int main(void)
 {
 	char must_report = 0, first_run = 1;
-	uchar   idleCounter = 0;
 
 	hardwareInit();
 	curGamepad = jaguarGetGamepad();
@@ -267,21 +273,9 @@ int main(void)
 			first_run = 0;
 		}
 
-		if(TIFR & (1<<TOV0)){   /* 22 ms timer */
-			TIFR = 1<<TOV0;
-			if(idleRate != 0){
-				if(idleCounter > 4){
-					idleCounter -= 5;   /* 22 ms in units of 4 ms */
-				}else{
-					idleCounter = idleRate;
-					must_report = 1;
-				}
-			}
-		}
-
-		if (TIFR & (1<<OCF2))
+		if (mustPollControllers())
 		{
-			TIFR = 1<<OCF2;
+			clrPollControllers();
 			if (!must_report)
 			{
 				curGamepad->update();
@@ -291,8 +285,7 @@ int main(void)
 			}
 
 		}
-		
-			
+
 		if(must_report)
 		{
 			if (usbInterruptIsReady())

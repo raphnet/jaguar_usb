@@ -1,3 +1,6 @@
+--- v1.2 (Nov 20, 2016)
+    - Add Atmega168 support
+
 --- v1.1 (Feb 28, 2015)
     - Updated code for modern compilers
     - Updated V-USB
